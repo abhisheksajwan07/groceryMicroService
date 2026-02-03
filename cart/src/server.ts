@@ -1,4 +1,5 @@
 import express from "express";
+import type { Request, Response, NextFunction } from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
@@ -6,6 +7,7 @@ import logger from "./config/logger.config.js";
 import cartRoutes from "./routes/cart.routes.js";
 import internalRoutes from "./routes/internal.routes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
+import { defaultLimiter } from "./middleware/rateLimiter.js";
 
 dotenv.config();
 
@@ -17,22 +19,20 @@ if (!process.env.INTERNAL_SERVICE_KEY || !process.env.INTERNAL_GATEWAY_SECRET ||
 const app = express();
 const PORT = process.env.SERVER_PORT || process.env.PORT || 4003;
 
-import rateLimit from "express-rate-limit";
-
 // Middleware
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const globalLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
-    message: "Too many request from this IP,please try again later",
-    standardHeaders: true,
-    legacyHeaders: false,
+// Global Rate Limiter
+app.use(defaultLimiter);
+
+// Custom Logging Middleware
+app.use((req: Request, _res: Response, next: NextFunction) => {
+    logger.info(`${req.method} ${req.url}`);
+    next();
 });
-app.use(globalLimiter);
 
 // Health Check
 app.get("/health", (_req, res) => {
@@ -46,6 +46,14 @@ app.get("/health", (_req, res) => {
 // Routes
 app.use("/api/cart", cartRoutes);
 app.use("/api/internal", internalRoutes);
+
+// 404 Handler
+app.use((_req, res) => {
+    res.status(404).json({
+        success: false,
+        message: "Route not found",
+    });
+});
 
 // Global Error Handler
 app.use(errorHandler);

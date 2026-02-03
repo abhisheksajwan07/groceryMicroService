@@ -1,4 +1,5 @@
 import express from "express";
+import type { Request, Response, NextFunction } from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
@@ -6,31 +7,30 @@ import orderRoutes from "./routes/order.routes.js";
 import { paymentWebhook } from "./controller/order.controller.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import logger from "./config/logger.config.js";
+import { defaultLimiter } from "./middleware/rateLimiter.js";
 
 dotenv.config();
 
-if (!process.env.INTERNAL_SERVICE_KEY || !process.env.PRODUCT_SERVICE_URL || !process.env.RAZORPAY_KEY_SECRET) {
+if (!process.env.INTERNAL_SERVICE_KEY || !process.env.INTERNAL_GATEWAY_SECRET || !process.env.PRODUCT_SERVICE_URL || !process.env.RAZORPAY_KEY_SECRET) {
   console.error("CRITICAL: Missing required environment variables (ORDER_SERVICE)");
   process.exit(1);
 }
 
 const app = express();
-const PORT = process.env.PORT || 3004;
-
-import rateLimit from "express-rate-limit";
+const PORT = process.env.SERVER_PORT || process.env.PORT || 3004;
 
 // Middleware
 app.use(helmet());
 app.use(cors());
 
-const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: "Too many request from this IP,please try again later",
-  standardHeaders: true,
-  legacyHeaders: false,
+// Global Rate Limiter
+app.use(defaultLimiter);
+
+// Custom Logging Middleware
+app.use((req: Request, _res: Response, next: NextFunction) => {
+  logger.info(`${req.method} ${req.url}`);
+  next();
 });
-app.use(globalLimiter);
 
 // Webhook (Specific Route before global body parsers)
 app.post(
@@ -53,6 +53,14 @@ app.get("/health", (_req, res) => {
 
 // Routes
 app.use("/api/order", orderRoutes);
+
+// 404 Handler
+app.use((_req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "Route not found",
+  });
+});
 
 // Global Error Handler
 app.use(errorHandler);

@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response, NextFunction } from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
@@ -9,6 +9,7 @@ import productRoutes from "./routes/product.routes";
 import internalRoutes from "./routes/internal.routes";
 import searchRoutes from "./routes/search.routes";
 import { errorHandler } from "./middleware/errorHandler";
+import { defaultLimiter } from "./middleware/rateLimiter";
 
 dotenv.config();
 
@@ -20,8 +21,6 @@ if (!process.env.INTERNAL_SERVICE_KEY || !process.env.MONGO_URI || !process.env.
 const app = express();
 const PORT = process.env.SERVER_PORT || process.env.PORT || 3001;
 
-import rateLimit from "express-rate-limit";
-
 // Middleware
 app.use(helmet());
 app.use(cors());
@@ -29,14 +28,14 @@ app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(mongoSanitize());
 
-const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: "Too many request from this IP,please try again later",
-  standardHeaders: true,
-  legacyHeaders: false,
+// Global Rate Limiter
+app.use(defaultLimiter);
+
+// Custom Logging Middleware
+app.use((req: Request, _res: Response, next: NextFunction) => {
+  logger.info(`${req.method} ${req.url}`);
+  next();
 });
-app.use(globalLimiter);
 
 // Health Check
 app.get("/health", (_req, res) => {
@@ -51,6 +50,14 @@ app.get("/health", (_req, res) => {
 app.use("/api/products", productRoutes);
 app.use("/api/internal", internalRoutes);
 app.use("/api/search", searchRoutes);
+
+// 404 Handler
+app.use((_req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "Route not found",
+  });
+});
 
 // Global Error Handler
 app.use(errorHandler);

@@ -4,7 +4,7 @@ import { asyncHandler } from "../middleware/asyncHandler";
 import { ApiError } from "../utils/ApiError";
 
 function getUserId(req: Request): string {
-  const userId = req.headers["x-user-id"] as string;
+  const userId = req.user?.userId;
 
   if (!userId) {
     throw new ApiError(401, "Unauthorized");

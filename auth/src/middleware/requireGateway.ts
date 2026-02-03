@@ -3,7 +3,7 @@ import { Request, Response, NextFunction } from "express"
 declare global {
   namespace Express {
     interface Request {
-      user?: { userId: string }
+      user?: { userId: string; role?: string }
     }
   }
 }
@@ -15,11 +15,12 @@ export const requireGateway = (
 ) => {
   const gatewayToken = req.headers["x-internal-token"]
   const userId = req.headers["x-user-id"]
+  const userRole = req.headers["x-user-role"]
 
   if (gatewayToken !== process.env.INTERNAL_GATEWAY_SECRET) {
     return res.status(403).json({
       success: false,
-      message: "Forbidden:invalid gateway",
+      message: "Forbidden: Direct access not allowed",
     })
   }
 
@@ -29,6 +30,10 @@ export const requireGateway = (
       message: "Missing user identity",
     })
   }
-  req.user = { userId }
+
+  req.user = {
+    userId,
+    role: typeof userRole === "string" ? userRole : undefined
+  }
   next()
 }

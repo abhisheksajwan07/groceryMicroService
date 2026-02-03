@@ -2,12 +2,12 @@ import { Router } from "express"
 import {
   getProfileController,
   updateProfileController,
-} from "../controller/profile-controller"
+} from "../controller/profile.controller"
 
 import { validate } from "../middleware/validate"
-import { updateProfileSchema } from "../validator/profile-validator"
-import { defaultLimiter } from "@/middleware/rateLimiter"
-import { requireGateway } from "@/middleware/requireGateway"
+import { updateProfileSchema } from "../validations/profile.validations"
+import { defaultLimiter } from "../middleware/rateLimiter"
+import { requireGateway } from "../middleware/requireGateway"
 
 const profileRoutes = Router()
 

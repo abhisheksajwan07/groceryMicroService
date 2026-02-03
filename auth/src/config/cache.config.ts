@@ -1,5 +1,5 @@
 // import { createClient } from "redis"
-// import {env} from "@configs/env.config.js"
+// import {env} from "./env.config.js"
 
 // const cache = createClient({
 //   url: env.REDIS_URL,

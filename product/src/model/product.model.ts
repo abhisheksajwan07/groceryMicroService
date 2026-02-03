@@ -47,7 +47,7 @@ const ImageSchema = new Schema<IImage>(
   },
   {
     _id: false,
-  }
+  },
 );
 
 const ProductSchema = new Schema<IProduct>(
@@ -67,7 +67,7 @@ const ProductSchema = new Schema<IProduct>(
     isActive: { type: Boolean, default: true },
     isFeatured: { type: Boolean, default: false },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 ProductSchema.index({
