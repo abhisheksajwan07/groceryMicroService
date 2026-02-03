@@ -5,8 +5,8 @@
   "main": "server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "node esbuild.config.js",
-    "start": "node dist/server.cjs",
+    "build": "tsc",
+    "start": "node dist/server.js",
     "format:check": "npx prettier . --check",
     "format": "npx prettier . --write",
     "generate": "npx drizzle-kit generate",

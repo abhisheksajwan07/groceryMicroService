@@ -16,7 +16,7 @@ import {
     VerifyPaymentSchema,
 } from "../validations/order.schema.js";
 
-const orderRoutes = Router();
+const orderRoutes: Router = Router();
 
 // Apply gateway validation to ALL routes
 orderRoutes.use(requireGateway);

@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from "express";
 import { prisma } from "../utils/prisma.js";
-import { OrderStatus } from "../generated/prisma/index.js";
+import { OrderStatus, type Prisma } from "../generated/prisma/index.js";
 import { razorpay } from "../utils/razorpay.js";
 import crypto from "crypto";
 import { internalGet, internalPost } from "../utils/internalHttp.js";
@@ -73,7 +73,7 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
   const grandTotal = itemsTotal + deliveryCharge;
   const { slot, expectedDelivery } = getTimeSlot();
 
-  const order = await prisma.$transaction(async (tx) => {
+  const order = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const created = await tx.order.create({
       data: {
         orderNumber: generateOrderId(),
@@ -230,7 +230,7 @@ export const paymentWebhook = async (req: Request, res: Response) => {
 
     if (!order || order.status === OrderStatus.PAID) return res.sendStatus(200);
 
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.order.update({
         where: { id: order.id },
         data: {
@@ -251,11 +251,11 @@ export const paymentWebhook = async (req: Request, res: Response) => {
       await internalPost(
         `${process.env.PRODUCT_SERVICE_URL}/api/internal/decrement-stock`,
         {
-          items: order.items.map((it) => ({
-            productId: it.productId,
-            variantId: it.variantId,
-            qty: it.quantity
-          })),
+            items: order.items.map((item: { productId: string; variantId: string; quantity: number }) => ({
+              productId: item.productId,
+              variantId: item.variantId,
+              qty: item.quantity,
+            })),
         }
       );
 
@@ -306,6 +306,3 @@ export const getOrderById = asyncHandler(async (req: Request, res: Response) => 
   }
   return res.json({ success: true, data: order });
 });
-
-
-

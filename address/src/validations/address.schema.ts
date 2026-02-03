@@ -1,8 +1,7 @@
 import { z } from "zod";
 
 const CoordinatesSchema = z
-  .array(z.number())
-  .length(2, "Coordinates must be [longitude, latitude]")
+  .tuple([z.number(), z.number()])
   .refine(
     ([lng, lat]) => lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90,
     "Invalid longitude/latitude values"
