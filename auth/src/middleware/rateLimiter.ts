@@ -1,7 +1,7 @@
 import { RateLimiterRedis } from "rate-limiter-flexible"
 import { Request, Response, NextFunction } from "express"
 import { redisClient } from "../utils/redisClient"
-import logger from "../configs/logger.config"
+import logger from "../config/logger.config"
 
 export const sensitiveLimiter = new RateLimiterRedis({
   storeClient: redisClient,
